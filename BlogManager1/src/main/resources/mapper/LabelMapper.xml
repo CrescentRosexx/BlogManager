@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhang.blogmanager1.mapper.LabelsMapper">
+
+    <!--按条件分页查询标签信息-->
+    <select id="selectByPage" parameterType="com.zhang.blogmanager1.entity.label.LabelsReq"
+            resultType="com.zhang.blogmanager1.entity.label.LabelsInfo">
+        SELECT labels.labelid, labelname, COUNT(DISTINCT articleid) as quotenum
+        FROM labels LEFT OUTER JOIN article_label
+                ON(labels.labelid = article_label.labelid)
+        <where>
+            <if test="req.labelid != -1">labels.labelid = #{req.labelid}</if>
+            <if test="req.labelname != ''">AND labelname like concat('%',#{req.labelname},'%')</if>
+        </where>
+        GROUP BY labels.labelid
+        ORDER BY labelid asc
+    </select>
+    <!--删除标签-->
+    <delete id="labelDelete">
+        DELETE
+        FROM labels
+        WHERE labelid = #{labelid}
+    </delete>
+    <!--批量删除标签-->
+    <delete id="labelBatchDelete">
+        DELETE FROM labels
+        WHERE labelid IN
+        <foreach item="item" index="index" open="(" separator="," close=")" collection="idList">
+            #{item}
+        </foreach>
+    </delete>
+    <!--更新标签名-->
+    <update id="updateLabel" parameterType="com.zhang.blogmanager1.entity.label.Labels">
+        UPDATE labels
+        SET labelname = #{req.labelname}
+        WHERE labelid = #{req.labelid}
+    </update>
+    <!--插入新标签-->
+    <insert id="addLabel">
+        INSERT INTO labels(labelname)
+        VALUES (#{labelname})
+    </insert>
+</mapper>

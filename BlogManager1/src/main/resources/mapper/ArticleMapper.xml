@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhang.blogmanager1.mapper.ArticlesMapper">
+
+<!--查询article信息，连接查询作者，并且包含了所有标签的article，已废弃-->
+    <select id="selectByPageDeprecated" parameterType="com.zhang.blogmanager1.entity.article.ArticlesReq"
+            resultType="com.zhang.blogmanager1.entity.article.ArticleInfo">
+        SELECT DISTINCT articles.articleid, name, articles.publishtime, title, articles.content, articles.audit
+        FROM articles, article_label, labels, users
+        <where>
+            users.userid = articles.userid
+            <if test="req.author != ''">
+                AND users.name like concat('%',#{req.author},'%')
+            </if>
+
+            <if test="req.title != ''">AND title like concat('%',#{req.title},'%')</if>
+            <if test="req.publishBegin != ''">AND articles.publishtime &gt;= #{req.publishBegin}</if>
+            <if test="req.publishEnd != ''">AND articles.publishtime &lt;= #{req.publishEnd}</if>
+            <if test="req.audit != -1">AND articles.audit = #{req.audit}</if>
+
+            <foreach item="item" index="index" collection="req.labels">
+                AND EXISTS (
+                    SELECT * FROM article_label, labels
+                    WHERE articles.articleid = article_label.articleid
+                    AND article_label.labelid = labels.labelid
+                    AND labels.labelname = #{item}
+                )
+            </foreach>
+        </where>
+        ORDER BY articleid asc
+    </select>
+<!--查询包含了article信息，连接查询作者，并且包含了所有标签的article-->
+    <select id="selectByPage" parameterType="com.zhang.blogmanager1.entity.article.ArticlesReq"
+            resultType="com.zhang.blogmanager1.entity.article.ArticleInfo">
+        SELECT DISTINCT article_view.articleid, name, publishtime, title, content, audit, likenum, commentnum
+        FROM article_view, likenum_view, commentnum_view
+        <where>
+            article_view.articleid = likenum_view.articleid
+            AND article_view.articleid = commentnum_view.articleid
+            <if test="req.author != ''">
+                AND name like concat('%',#{req.author},'%')
+            </if>
+
+            <if test="req.title != ''">AND title like concat('%',#{req.title},'%')</if>
+            <if test="req.publishBegin != ''">AND publishtime &gt;= #{req.publishBegin}</if>
+            <if test="req.publishEnd != ''">AND publishtime &lt;= #{req.publishEnd}</if>
+            <if test="req.audit != -1">AND audit = #{req.audit}</if>
+
+            <foreach item="item" index="index" collection="req.labels">
+                AND EXISTS (
+                SELECT * FROM article_label, labels
+                WHERE article_view.articleid = article_label.articleid
+                AND article_label.labelid = labels.labelid
+                AND labels.labelname = #{item}
+                )
+            </foreach>
+        </where>
+        ORDER BY article_view.articleid asc
+    </select>
+<!--查询点赞数-->
+    <select id="countLike" parameterType="int" resultType="int">
+        SELECT COUNT(*) FROM likes
+        <where>
+            likes.articleid = #{id}
+        </where>
+    </select>
+<!--查询评论数-->
+    <select id="countComment" parameterType="int" resultType="int">
+        SELECT COUNT(*) FROM comments
+        <where>
+            comments.articleid = #{id}
+        </where>
+    </select>
+<!--查询某文章的标签-->
+    <select id="selectLabelsByArticle" resultType="com.zhang.blogmanager1.entity.article.LabelInfo" parameterType="int">
+        SELECT labelname, support FROM labels, article_label
+        <where>
+            article_label.articleid = #{id}
+            AND article_label.labelid = labels.labelid
+        </where>
+    </select>
+<!--按labelname查询labelid-->
+    <select id="selectLabelIdByName" resultType="Integer">
+        SELECT labelid FROM labels
+        <where>
+            labelname = #{labelname}
+        </where>
+    </select>
+<!--插入新标签-->
+    <insert id="insertLabel">
+        INSERT INTO labels(labelname) VALUES(#{labelname})
+    </insert>
+<!--获取新插入的labelid-->
+    <select id="selectMaxLabelid" resultType="Integer">
+        SELECT MAX(labelid) FROM labels
+    </select>
+<!--查询某文章是否含有某标签-->
+    <select id="selectArticleAndLabel" resultType="Integer">
+        SELECT * FROM article_label
+        <where>
+            articleid=#{articleid}
+            AND labelid=#{labelid}
+        </where>
+    </select>
+<!--插入新的article——label关系-->
+    <insert id="insertArticleAndLabel">
+        INSERT INTO article_label
+        VALUES (#{articleid},#{labelid},0)
+    </insert>
+<!--删除article_label中的一个-->
+    <delete id="deleteArticleAndLabel">
+        DELETE FROM article_label
+        WHERE articleid=#{articleid}
+              AND  labelid IN (
+                  SELECT labelid FROM labels
+                  WHERE labelname=#{labelname}
+            )
+    </delete>
+<!--更新文章审核状态-->
+    <update id="updateArticleAudit">
+        UPDATE articles
+        SET audit = #{audit}
+        WHERE articleid = #{articleid}
+    </update>
+<!--删除文章-->
+    <delete id="deleteArticle">
+        DELETE FROM articles
+        WHERE articleid = #{articleid}
+    </delete>
+<!--批量删除文章-->
+    <delete id="deleteBatchArticle">
+        DELETE FROM articles
+        WHERE articleid IN
+        <foreach item="item" index="index" open="(" separator="," close=")" collection="idList">
+            #{item}
+        </foreach>
+    </delete>
+<!--插入新文章-->
+    <insert id="addNewArticle" parameterType="com.zhang.blogmanager1.entity.article.Articles">
+        INSERT INTO articles(userid, publishtime, title, content, audit)
+        VALUES (#{info.userid}, #{info.publishtime}, #{info.title}, #{info.content}, #{info.audit})
+    </insert>
+<!--获取新插入文章的id-->
+    <select id="selectMaxArticleid" resultType="Integer">
+        SELECT MAX(articleid) FROM articles
+    </select>
+</mapper>

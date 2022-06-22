@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhang.blogmanager1.mapper.UsersMapper">
+
+<!--插入新用户-->
+    <insert id="userInsert">
+        INSERT INTO users (name, password, registertime, usertype, sex, age, birth, email)
+        VALUES (#{name}, #{password}, #{registertime}, #{usertype}, #{sex}, #{age}, #{birth}, #{email})
+    </insert>
+<!--更新用户信息-->
+    <update id="userUpdate">
+        UPDATE users
+        SET name = #{name},
+            password = #{password},
+            usertype = #{usertype},
+            sex = #{sex},
+            age = #{age},
+            birth = #{birth},
+            email = #{email}
+        WHERE userid = #{userid}
+    </update>
+<!--删除用户-->
+    <delete id="userDelete">
+        DELETE
+        FROM users
+        WHERE userid = #{userid}
+    </delete>
+<!--批量删除用户-->
+    <delete id="deleteBatchIds">
+        DELETE FROM users
+        WHERE userid IN
+        <foreach item="item" index="index" open="(" separator="," close=")" collection="idList">
+            #{item}
+        </foreach>
+    </delete>
+<!--按条件分页查询用户-->
+    <select id="selectByPage" parameterType="com.zhang.blogmanager1.entity.user.UserReq"
+            resultType="com.zhang.blogmanager1.entity.user.Users">
+        <bind name="name" value="req.name + '%'"/>
+        <bind name="email" value="req.email + '%'"/>
+        SELECT * FROM users
+        <where>
+            <if test="req.name != ''">name like #{name}</if>
+            <if test="req.email != ''">AND email like #{email}</if>
+            <if test="req.usertype != -1">AND usertype = #{req.usertype}</if>
+            <if test="req.sex != -1">AND sex = #{req.sex}</if>
+            <if test="req.min != 0">AND age &gt;= #{req.min}</if>
+            <if test="req.max != 2147483647">AND age &lt;= #{req.max}</if>
+        </where>
+        ORDER BY userid asc
+    </select>
+</mapper>

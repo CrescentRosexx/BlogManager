@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhang.blogmanager1.mapper.CommentsMapper">
+    <!--分页查询评论信息-->
+    <select id="selectByPage" parameterType="com.zhang.blogmanager1.entity.comment.CommentsReq"
+            resultType="com.zhang.blogmanager1.entity.comment.CommentsInfo">
+        SELECT commentid, name, title, comments.articleid, comments.publishtime, comments.content, comments.audit
+        FROM comments, users, articles
+        WHERE comments.userid = users.userid
+        AND comments.articleid = articles.articleid
+        <if test="req.audit != -1">AND comments.audit = #{req.audit}</if>
+        <if test="req.author != ''">AND name like concat('%',#{req.author},'%')</if>
+        <if test="req.title != ''">AND title like concat('%',#{req.title},'%')</if>
+        <if test="req.articleid != -1">AND comments.articleid = #{req.articleid}</if>
+        <if test="req.publishBegin != ''">AND comments.publishtime &gt;= #{req.publishBegin}</if>
+        <if test="req.publishEnd != ''">AND comments.publishtime &lt;= #{req.publishEnd}</if>
+        <if test="req.content != ''">AND comments.content like concat('%',#{req.content},'%')</if>
+        ORDER BY comments.commentid
+    </select>
+    <!--更新评论审核状态-->
+    <update id="updateCommentAudit">
+        UPDATE comments
+        SET audit = #{audit}
+        WHERE commentid = #{commentid}
+    </update>
+    <!--删除评论-->
+    <delete id="deleteComment">
+        DELETE FROM comments
+        WHERE commentid = #{commentid}
+    </delete>
+    <!--批量删除评论-->
+    <delete id="deleteBatchComment">
+        DELETE FROM comments
+        WHERE commentid IN
+        <foreach item="item" index="index" open="(" separator="," close=")" collection="idList">
+            #{item}
+        </foreach>
+    </delete>
+</mapper>

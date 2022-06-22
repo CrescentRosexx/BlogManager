@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhang.blogmanager1.mapper.LikesMapper">
+
+    <!--按条件分页查询点赞记录-->
+    <select id="selectByPage" parameterType="com.zhang.blogmanager1.entity.like.LikeReq"
+            resultType="com.zhang.blogmanager1.entity.like.LikesInfo">
+        SELECT likeid, name, likes.articleid, title, liketime
+        FROM likes, articles, users
+        <where>
+            likes.userid = users.userid
+            AND likes.articleid = articles.articleid
+            <if test="req.author != ''">AND users.name like concat('%',#{req.author},'%')</if>
+            <if test="req.articleid != -1">AND likes.articleid = #{req.articleid}</if>
+            <if test="req.title != ''">AND articles.title like concat('%',#{req.title},'%')</if>
+            <if test="req.publishBegin != ''">AND liketime &gt;= #{req.publishBegin}</if>
+            <if test="req.publishEnd != ''">AND liketime &lt;= #{req.publishEnd}</if>
+        </where>
+        ORDER BY likeid asc
+    </select>
+    <!--删除点赞记录-->
+    <delete id="likeDelete">
+        DELETE
+        FROM likes
+        WHERE likeid = #{likeid}
+    </delete>
+    <!--批量删除点赞记录-->
+    <delete id="batchDelete">
+        DELETE FROM likes
+        WHERE likeid IN
+        <foreach item="item" index="index" open="(" separator="," close=")" collection="idList">
+            #{item}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://xx.xx.xx.xx:26000/blog?serverTimezone=UTC
+    username: xxxx
+    password: "xxxxx"
+    driver-class-name: org.postgresql.Driver
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
